@@ -1,8 +1,4 @@
-class Server(val port: Int) : EndPoint {
-
-  fun start() {
-
-  }
+class WebSocketServer(port: Int) : EndPoint {
 
   override fun onOpen(session: Session) {
 
