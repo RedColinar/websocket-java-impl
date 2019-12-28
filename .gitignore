@@ -1,7 +1,19 @@
-.idea
-.gradle
-/build/
+# Generated files
+bin/
+gen/
+out/
 *.class
+
+# Gradle files
+.gradle/
+build/
+
+# Log Files
+*.log
+
+# IntelliJ
+*.iml
+.idea/
 
 # Ignore Gradle GUI config
 gradle-app.setting

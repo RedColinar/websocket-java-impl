@@ -1,4 +1,6 @@
-class WebSocketServer(port: Int) : EndPoint {
+package ws
+
+class WebSocketServer : EndPoint {
 
   override fun onOpen(session: Session) {
 

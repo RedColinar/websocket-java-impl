@@ -1,0 +1,7 @@
+package http
+
+const val HTTP_SWITCHING_PROTOCOLS = 101
+const val HTTP_OK = 200
+const val HTTP_NOT_FOUND = 404
+const val HTTP_INTERNAL_SERVER_ERROR = 500
+const val HTTP_NOT_IMPLEMENTED = 501

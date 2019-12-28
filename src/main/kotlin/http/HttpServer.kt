@@ -1,10 +1,28 @@
+package http
+
+import ws.WebSocketHandler
+import ws.WebSocketServer
 import java.io.*
 import java.net.ServerSocket
 import java.net.Socket
 
 class HttpServer(port: Int) {
   private val serverSocket = ServerSocket(port)
+  private val registry: HandlerRegistry = HandlerRegistry()
+
   private lateinit var serverThread: Thread
+
+  init {
+    registry.register(ExactPathMatcher("/hello"), object : HttpHandler {
+      override fun handleRequest(socket: Socket, request: HttpRequest, response: HttpResponse): Boolean {
+        response.code = HTTP_OK
+        response.reasonPhrase = "OK"
+        response.body = createBody("hello to you", CONTENT_TYPE_PLAIN)
+        return true
+      }
+    })
+    registry.register(ExactPathMatcher("/chat"), WebSocketHandler(WebSocketServer()))
+  }
 
   fun start() {
     serverThread = Thread {
@@ -25,6 +43,10 @@ class HttpServer(port: Int) {
             val keepGoing = dispatch(clientSocket, request, response)
             if (!keepGoing) break@inner
             writeFullResponse(response, writer)
+
+            clientSocket.shutdownOutput()
+            clientSocket.shutdownInput()
+            clientSocket.close()
           }
         } catch (e: Exception) {
           e.printStackTrace()
@@ -38,7 +60,27 @@ class HttpServer(port: Int) {
 
   private fun dispatch(socket: Socket, request: HttpRequest, response: HttpResponse): Boolean {
     println(request.toString())
-    return false
+    val handler = registry.lookup(request.uri)
+    if (handler == null) {
+      response.code = HTTP_NOT_FOUND
+      response.reasonPhrase = "Not found"
+      response.body = createBody("No handler found\n", CONTENT_TYPE_PLAIN)
+      return true
+    }
+
+    return try {
+      handler.handleRequest(socket, request, response)
+    } catch (e: RuntimeException) {
+      response.code = HTTP_INTERNAL_SERVER_ERROR
+      response.reasonPhrase = "Internal Server Error"
+      val stack = StringWriter()
+      val stackWriter = PrintWriter(stack)
+      stackWriter.use {
+        e.printStackTrace(it)
+      }
+      response.body = createBody(stack.toString(), CONTENT_TYPE_PLAIN)
+      true
+    }
   }
 
   fun stop() {
@@ -95,90 +137,5 @@ class HttpServer(port: Int) {
       writer.writeLine()
       writer.flush()
     }
-  }
-}
-
-class HttpMessageReader(val input: BufferedInputStream) {
-  private val buffer = StringBuilder()
-  private val newLineDetector = NewLineDetector()
-
-  fun readLine(): String? {
-    while (true) {
-      input.available()
-      // 当无字节可读时，会阻塞
-      val b = input.read()
-      if (b < 0) return null
-
-      val c = b.toChar()
-      newLineDetector.accept(c)
-
-      when (newLineDetector.state()) {
-        NewLineDetector.STATE_ON_CRLF -> {
-          val result = buffer.toString()
-          buffer.setLength(0)
-          return result
-        }
-        NewLineDetector.STATE_ON_CR -> {
-        }
-        NewLineDetector.STATE_ON_OTHER -> buffer.append(c)
-      }
-    }
-  }
-
-  private class NewLineDetector {
-
-    private var state = STATE_ON_OTHER
-
-    fun accept(c: Char) {
-      when (state) {
-        STATE_ON_OTHER -> if (c == '\r') {
-          state = STATE_ON_CR
-        }
-        STATE_ON_CR -> if (c == '\n') {
-          state = STATE_ON_CRLF
-        } else {
-          state = STATE_ON_OTHER
-        }
-        STATE_ON_CRLF -> if (c == '\r') {
-          state = STATE_ON_CR
-        } else {
-          state = STATE_ON_OTHER
-        }
-        else -> throw IllegalArgumentException("Unknown state: $state")
-      }
-    }
-
-    fun state(): Int {
-      return state
-    }
-
-    companion object {
-      val STATE_ON_OTHER = 1
-      val STATE_ON_CR = 2
-      val STATE_ON_CRLF = 3
-    }
-  }
-}
-
-class HttpMessageWriter(val output: BufferedOutputStream) {
-  private val CRLF = "\r\n".toByteArray()
-
-  fun writeLine(line: String) {
-    var i = 0
-    val N = line.length
-    while (i < N) {
-      val c = line[i]
-      output.write(c.toInt())
-      i++
-    }
-    output.write(CRLF)
-  }
-
-  fun writeLine() {
-    output.write(CRLF)
-  }
-
-  fun flush() {
-    output.flush()
   }
 }

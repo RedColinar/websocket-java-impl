@@ -1,3 +1,5 @@
+package http
+
 class HttpRequest(
   var method: String = "",
   var uri: String = "",

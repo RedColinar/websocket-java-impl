@@ -1,3 +1,5 @@
+package http
+
 class HttpResponse(
   var code: Int = 0,
   var reasonPhrase: String = "",

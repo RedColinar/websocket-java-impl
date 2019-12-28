@@ -1,3 +1,5 @@
+package ws
+
 interface Session {
 
   fun sendText(payload: String)
