@@ -1,19 +1,22 @@
 import http.HttpServer
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import org.junit.Before
 import org.junit.Test
-import ws.Session
-import ws.SimpleEndPoint
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ClientServerTest {
-  lateinit var server: HttpServer
-  lateinit var client: TestClient
+  private lateinit var server: HttpServer
+  private lateinit var client: TestClient
+  private lateinit var okClient: OkTestClient
 
   @Before
   fun init() {
     server = HttpServer(8090)
     server.start()
     client = TestClient()
+    okClient = OkTestClient()
   }
 
   @Test
@@ -22,11 +25,10 @@ class ClientServerTest {
     client.requestHttp("http://localhost:8090/hello")
   }
 
-  @Test
+  @Test(timeout = 3 * 1000)
   fun testUpgrade() {
-    val ws = client.newWebSocket("ws://localhost:8090/chat", object : SimpleEndPoint() {
-      override fun onOpen(session: Session) {
-        super.onOpen(session)
+    val ws = okClient.requestWs("ws://localhost:8090/chat", object : WebSocketListener() {
+      override fun onOpen(webSocket: WebSocket, response: Response) {
         println("open")
         endLoop()
       }
