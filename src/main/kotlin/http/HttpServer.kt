@@ -108,7 +108,8 @@ class HttpServer(port: Int) {
         val headerLine = reader.readLine()
         headerLine ?: throw EOFException()
         if ("" == headerLine) break
-        val parts = headerLine.split(Regex(":"), 2)
+        // 注意 冒号空格
+        val parts = headerLine.split(Regex(": "), 2)
         if (parts.size != 2) throw IOException("Malformed header: $headerLine")
         message.headerNames.add(parts[0])
         message.headerValues.add(parts[1])

@@ -1,0 +1,6 @@
+package ws
+
+const val NORMAL_CLOSURE = 1000
+const val PROTOCOL_ERROR = 1002
+const val CLOSED_ABNORMALLY = 1006
+const val UNEXPECTED_CONDITION = 1011

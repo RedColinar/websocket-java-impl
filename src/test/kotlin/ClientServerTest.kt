@@ -25,8 +25,16 @@ class ClientServerTest {
     client.requestHttp("http://localhost:8090/hello")
   }
 
+  private var isLoop = AtomicBoolean(true)
+  private fun loop() {
+    isLoop.set(true)
+    while (isLoop.get()) {
+    }
+  }
+  private fun endLoop() = isLoop.getAndSet(false)
+
   @Test(timeout = 3 * 1000)
-  fun testUpgrade() {
+  fun testOnOpen() {
     val ws = okClient.requestWs("ws://localhost:8090/chat", object : WebSocketListener() {
       override fun onOpen(webSocket: WebSocket, response: Response) {
         println("open")
@@ -36,12 +44,8 @@ class ClientServerTest {
     loop()
   }
 
-  var isLoop = AtomicBoolean(true)
-  private fun loop() {
-    while (isLoop.get()) {
+  @Test
+  fun testOnText() {
 
-    }
   }
-
-  private fun endLoop() = isLoop.getAndSet(false)
 }

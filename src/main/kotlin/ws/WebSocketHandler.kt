@@ -1,12 +1,13 @@
 package ws
 
 import http.*
+import java.io.BufferedOutputStream
 import java.net.Socket
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.*
 
-class WebSocketHandler(val endPoint: EndPoint) : HttpHandler {
+class WebSocketHandler(private val endPoint: SimpleEndPoint) : HttpHandler {
 
   override fun handleRequest(socket: Socket, request: HttpRequest, response: HttpResponse): Boolean {
     if (!isSupportUpgradeRequest(request)) {
@@ -21,8 +22,8 @@ class WebSocketHandler(val endPoint: EndPoint) : HttpHandler {
 
   private fun isSupportUpgradeRequest(request: HttpRequest): Boolean {
     return "Upgrade" == getFirstHeaderValue(request, "Connection")
-            && "websocket" == getFirstHeaderValue(request, "Upgrade")
-            && "13" == getFirstHeaderValue(request, "Sec-WebSocket-Version")
+      && "websocket" == getFirstHeaderValue(request, "Upgrade")
+      && "13" == getFirstHeaderValue(request, "Sec-WebSocket-Version")
   }
 
   private fun getFirstHeaderValue(message: HttpMessage, headerName: String): String? {
@@ -39,11 +40,18 @@ class WebSocketHandler(val endPoint: EndPoint) : HttpHandler {
     if (clientKey != null) {
       response.addHeader("Sec-WebSocket-Accept", generateServerKey(clientKey))
     }
+
+    val input = socket.getInputStream()
+    val output = socket.getOutputStream()
+    HttpServer.writeResponseMessage(response, HttpMessageWriter(BufferedOutputStream(output)))
+
+    val session = WebSocketSession(input, output, endPoint)
+    session.handle()
   }
 
   private fun generateServerKey(clientKey: String): String {
     return try {
-      val serverKey = clientKey + Companion.SERVER_KEY_GUID
+      val serverKey = clientKey + SERVER_KEY_GUID
       val sha1 = MessageDigest.getInstance("SHA-1")
       sha1.update(serverKey.toByteArray())
       Base64.getEncoder().encodeToString(sha1.digest())
