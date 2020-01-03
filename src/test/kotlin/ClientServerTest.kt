@@ -2,20 +2,19 @@ import http.HttpServer
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertTimeout
+import org.junit.jupiter.api.*
 import java.time.Duration
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClientServerTest {
   private lateinit var server: HttpServer
   private lateinit var client: TestClient
   private lateinit var okClient: OkTestClient
 
   @BeforeAll
-  fun init() {
+  fun initTest() {
     server = HttpServer(8090)
     server.start()
     client = TestClient()
@@ -37,7 +36,7 @@ class ClientServerTest {
 
   private fun endLoop() = isLoop.getAndSet(false)
 
-  @Test()
+  @Test
   fun testOnOpen() {
     val ws = okClient.requestWs("ws://localhost:8090/chat", object : WebSocketListener() {
       override fun onOpen(webSocket: WebSocket, response: Response) {
@@ -52,13 +51,8 @@ class ClientServerTest {
       }
     })
 
-    assertTimeout(Duration.ofSeconds(3)) {
+    assertTimeoutPreemptively(Duration.ofSeconds(3)) {
       loop()
     }
-  }
-
-  @Test
-  fun testOnText() {
-
   }
 }

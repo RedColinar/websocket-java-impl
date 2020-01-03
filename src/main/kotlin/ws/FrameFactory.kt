@@ -8,7 +8,9 @@ fun unmask(maskKey: ByteArray, data: ByteArray, _offset: Int, _count: Int) {
   var count = _count
   var index = 0
   while (count-- > 0) {
-    data[offset++] = data[offset++] xor maskKey[index++ % maskKey.size]
+    data[offset] = data[offset] xor maskKey[index % maskKey.size]
+    offset++
+    index++
   }
 }
 
