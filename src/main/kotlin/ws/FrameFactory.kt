@@ -3,11 +3,12 @@ package ws
 import kotlin.experimental.xor
 
 /** 解掩码 */
-fun unmask(maskKey: ByteArray, data: ByteArray, _offset: Int, _count: Int) {
+fun mask(maskKey: ByteArray, data: ByteArray, _offset: Int, _count: Int) {
   var offset = _offset
   var count = _count
   var index = 0
   while (count-- > 0) {
+    // maskKey.size = 4
     data[offset] = data[offset] xor maskKey[index % maskKey.size]
     offset++
     index++

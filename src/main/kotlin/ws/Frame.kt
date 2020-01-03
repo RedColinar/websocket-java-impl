@@ -1,6 +1,7 @@
 package ws
 
 import java.io.*
+import kotlin.experimental.and
 import kotlin.experimental.or
 
 class Frame {
@@ -29,7 +30,7 @@ class Frame {
     decodeSecondByte(secondByte, input)
     maskingKey = if (hasMask) decodeMaskKey(input) else ByteArray(0)
     decodePayloadData(input)
-    unmask(maskingKey, payloadData, 0, payloadLen.toInt())
+    mask(maskingKey, payloadData, 0, payloadLen.toInt())
   }
 
   private fun decodeFirstByte(byte: Byte) {
@@ -44,7 +45,8 @@ class Frame {
   private fun decodeSecondByte(byte: Byte, input: InputStream) {
     val b = byte.toInt()
     hasMask = (b and 0x80) != 0
-    payloadLen = decodeLength(b and 0x80.inv(), input)
+    val lengthMaybe = (byte and 0x80.inv().toByte()).toInt()
+    payloadLen = decodeLength(lengthMaybe, input)
   }
 
   /**
