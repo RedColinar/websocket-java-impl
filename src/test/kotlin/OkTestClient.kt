@@ -1,16 +1,14 @@
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
+import okhttp3.*
 
 class OkTestClient {
-  val client = OkHttpClient()
+  private val client = OkHttpClient()
 
-  fun requestHttp(path: String) {
+  fun requestHttp(path: String): Response {
     val request: Request = Request.Builder().url(path).build()
+    return client.newCall(request).execute()
   }
 
-  fun requestWs(path: String, listener: WebSocketListener): WebSocket {
+  fun newWebSocket(path: String, listener: WebSocketListener): WebSocket {
     val request = Request.Builder().url(path).build()
     return client.newWebSocket(request, listener)
   }
